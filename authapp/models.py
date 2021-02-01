@@ -9,7 +9,7 @@ from django.utils.timezone import now
 
 class ShopUser(AbstractUser):
     avatar = models.ImageField(upload_to='users_avatars', blank=True)
-    age = models.PositiveIntegerField(verbose_name='возраст', default=18)
+    age = models.PositiveIntegerField(verbose_name='возраст', blank=True, null=True)
 
     activation_key = models.CharField(max_length=128, blank=True, null=True)
     activation_key_expires = models.DateTimeField(default=(now() + timedelta(hours=48)))
@@ -18,6 +18,7 @@ class ShopUser(AbstractUser):
         if now() < self.activation_key_expires:
             return False
         return True
+
 
 class ShopUserProfile(models.Model):
     MALE = 'M'
@@ -42,6 +43,3 @@ class ShopUserProfile(models.Model):
     @receiver(post_save, sender=ShopUser)
     def save_user_profile(sender, instance, **kwargs):
         instance.shopuserprofile.save()
-
-
-

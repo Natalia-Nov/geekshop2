@@ -17,26 +17,27 @@ class OrderList(ListView):
         return Order.objects.filter(user=self.request.user)
 
 
-class OrderCreate(CreateView):
+class OrderItemsCreate(CreateView):
     model = Order
     fields = []
-    success_url = reverse_lazy('order:orders')
+    success_url = reverse_lazy('order:orders_list')
 
     def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
+        data = super(OrderItemsCreate, self).get_context_data(**kwargs)
         OrderFormSet = inlineformset_factory(Order, OrderItem, form=OrderItemForm, extra=1)
 
         if self.request.POST:
             formset = OrderFormSet(self.request.POST)
         else:
-            basket_items = Basket.objects.filter(user=self.request.user)
+            basket_items = Basket.get_items(self.request.user)
             if basket_items.exists():
                 OrderFormSet = inlineformset_factory(Order, OrderItem, form=OrderItemForm, extra=basket_items.count())
                 formset = OrderFormSet()
                 for num, form in enumerate(formset.forms):
                     form.initial['product'] = basket_items[num].product
                     form.initial['quantity'] = basket_items[num].quantity
-                basket_items.delete()
+                    form.initial['price'] = basket_items[num].product.price
+                # basket_items.delete()
             else:
                 formset = OrderFormSet()
 
@@ -49,6 +50,7 @@ class OrderCreate(CreateView):
         orderitems = context['orderitems']
 
         with transaction.atomic():
+
             form.instance.user = self.request.user
             self.object = form.save()
             if orderitems.is_valid():
@@ -60,6 +62,7 @@ class OrderCreate(CreateView):
 
         return super().form_valid(form)
 
+
 class OrderUpdate(UpdateView):
     model = Order
     fields = []
@@ -70,11 +73,13 @@ class OrderUpdate(UpdateView):
         OrderFormSet = inlineformset_factory(Order, OrderItem, form=OrderItemForm, extra=1)
 
         if self.request.POST:
-            formset = OrderFormSet(self.request.POST, instance=self.object)
+            data['orderitems'] = OrderFormSet(self.request.POST, instance=self.object)
         else:
             formset = OrderFormSet(instance=self.object)
-
-        data['orderitems'] = formset
+            for form in formset.forms:
+                if form.instance.pk:
+                    form.initial['price'] = form.instance.product.price
+            data['orderitems'] = formset
 
         return data
 
@@ -93,6 +98,7 @@ class OrderUpdate(UpdateView):
 
         return super().form_valid(form)
 
+
 class OrderDelete(DeleteView):
     model = Order
     success_url = reverse_lazy('order:orders')
@@ -100,6 +106,7 @@ class OrderDelete(DeleteView):
 
 class OrderDetail(DetailView):
     model = Order
+
 
 def order_forming_complete(request, pk):
     order = get_object_or_404(Order, pk=pk)

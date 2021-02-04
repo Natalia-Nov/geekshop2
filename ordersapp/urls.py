@@ -7,7 +7,7 @@ app_name = "ordersapp"
 
 urlpatterns = [
     path('', ordersapp.OrderList.as_view(), name='orders'),
-    path('create/', ordersapp.OrderCreate.as_view(), name='order_create'),
+    path('create/', ordersapp.OrderItemsCreate.as_view(), name='order_create'),
     path('update/<pk>/', ordersapp.OrderUpdate.as_view(), name='order_update'),
     path('delete/<pk>/', ordersapp.OrderDelete.as_view(), name='order_delete'),
     path('detail/<pk>/', ordersapp.OrderDetail.as_view(), name='order_read'),

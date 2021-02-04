@@ -37,7 +37,7 @@ class Order(models.Model):
         verbose_name_plural = 'заказы'
         ordering = ('-created_at',)
 
-    def _get_total_quantity(self):
+    def get_total_quantity(self):
         _items = self.orderitems.select_related()
         _total_quantity = sum(list(map(lambda x: x.quantity, _items)))
         return _total_quantity
@@ -63,3 +63,8 @@ class OrderItem(models.Model):
 
     def get_product_cost(self):
         return self.product.price * self.quantity
+
+    @staticmethod
+    def get_item(pk):
+        return OrderItem.objects.filter(pk=pk).first()
+
